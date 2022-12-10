@@ -1,0 +1,178 @@
+# Default values for PlanarAlly.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Should be only one replica for the deployment as 
+# Planar Ally uses sqlite as it's database backend
+replicaCount: 1
+
+image:
+  # -- Image to use for deploying, must support the same 
+  # /static/assests and /data volumes as the default image
+  repository: kruptein/planarally
+  # -- Pull policy for the deployment
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag whose default is the chart appVersion.
+  # @default -- the chart will use the app version in the Chart.yaml
+  tag: ""
+
+initContainer:
+  # -- Image to use for fixing permissions of the storage directory
+  repository: busybox
+  # -- Pull policy for the init container
+  pullPolicy: IfNotPresent
+  # -- Set the tag for the init conatiner
+  tag: "1.35"
+
+# -- Any credentials needed for pulling the planarally container
+imagePullSecrets: []
+
+# -- Override the name of the deployment for the chart
+nameOverride: ""
+
+# -- Override the kubernetes object release name values
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# -- Any pod annotations needed
+podAnnotations: {}
+
+# -- Any pod security context needed
+podSecurityContext: {}
+  # fsGroup: 2000
+
+# -- Any deployment security context needed
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+config:
+  # -- This limits the maximum size a single request to the server can be.
+  # This does _not_ limit the maximum size of assets.
+  # Campaign uploads will be chunked by the client according to this setting.
+  # Assets are currently sent in a chunked fashion over a websocket, so this is not relevant for them yet.
+  # Defaults to 10 * 1024 ** 2 = 10 MB
+  maxUploadBytes: "10_485_760"
+
+  admin:
+    # -- Enable the admin console
+    enabled: true
+
+storage:
+  # -- This should be storage that has block level support
+  # such as Longhorn, Celph, Gluster, etc.
+  # using NFS for this will end in pain, misery, and lost hair
+  data: 
+    # -- Annotations needed for the data storage PVC
+    annotations: {}
+
+    # storage.data.storageClass -- Storage class for the PVC
+    # If defined, storageClassName: <storageClass>
+    # If set to "-", storageClassName: "", which disables dynamic provisioning
+    # If undefined (the default) or set to null, no storageClassName spec is
+    #   set, choosing the default provisioner.  (gp2 on AWS, standard on
+    #   GKE, AWS & OpenStack)
+    # @default -- "-"
+    # storageClass: "-"
+
+    # storage.data.existingClaim -- A manually managed Persistent Volume and Claim
+    # If defined, PVC must be created manually before volume will be bound
+    
+    # existingClaim:
+
+    # -- Access mode for the data storage
+    accessMode: ReadWriteOnce
+    # -- Allocated storage for the data storage
+    size: 32Gi
+
+  # -- Any expandable storage class should be good for this
+  # if you have a NAS with NFS use it for this
+  static:
+    # -- Annotations needed for the data storage PVC
+    annotations: {}
+
+    # storage.static.storageClass -- Storage class for the PVC
+    # If defined, storageClassName: <storageClass>
+    # If set to "-", storageClassName: "", which disables dynamic provisioning
+    # If undefined (the default) or set to null, no storageClassName spec is
+    #   set, choosing the default provisioner.  (gp2 on AWS, standard on
+    #   GKE, AWS & OpenStack)
+    # @default -- "-"
+    # storageClass: "-"
+
+    # storage.static.existingClaim -- A manually managed Persistent Volume and Claim
+    # If defined, PVC must be created manually before volume will be bound
+    
+    # existingClaim:
+
+    # -- Access mode for the data storage
+    accessMode: ReadWriteOnce
+    # -- Allocated storage for the data storage
+    size: 64Gi
+
+service:
+  # -- What service should be used for accessing the pod
+  type: ClusterIP
+  # -- (int) Should be set to the default port planar ally runs
+  # in the container
+  port: 8000
+  # -- (IP) If service.type is LoadBalancer hardcode the IP that is to be required
+  loadBalancerIP: nil
+  # -- (int) If service.type is NodePort set the value of the node
+  nodePort: nil
+  
+
+ingress:
+  # -- Enable ingress for the service
+  enabled: false
+  # -- Set ingress class name
+  className: ""
+  # -- Any annotations needed for the Ingress Controller
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  # -- Hostnames and paths that should route to the Planar Ally service
+  hosts:
+    - host: planarally.chart.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  # -- TLS certificates that should be used for the service
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# -- Resource allocations for the deployment
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# -- Node selector for the deployement
+nodeSelector: {}
+
+# -- Any tolerations for the deployment
+tolerations: []
+
+# -- Any affinity settings for the deployment in scheduling the pod
+affinity: {}

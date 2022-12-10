@@ -1,0 +1,25 @@
+{{- if not .Values.storage.static.existingClaim -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ template "planarally.fullname" . }}-static
+  labels:
+   {{- include "planarally.labels" . | nindent 4 }}
+{{- if .Values.storage.static.annotations }}
+  annotations:
+{{ toYaml .Values.storage.static.annotations | indent 4 }}
+{{- end }}
+spec:
+  accessModes:
+    - {{ .Values.storage.static.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.storage.static.size | quote }}
+{{- if .Values.storage.static.storageClass }}
+{{- if (eq "-" .Values.storage.static.storageClass) }}
+  storageClassName: ""
+{{- else }}
+  storageClassName: "{{ .Values.storage.static.storageClass }}"
+{{- end }}
+{{- end }}
+{{- end -}}

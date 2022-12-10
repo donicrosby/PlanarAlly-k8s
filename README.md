@@ -1,2 +1,58 @@
-# PlanarAlly-k8s
-A helm chart to deploy the Planar Ally to a Kubernetes cluster
+# planarally
+
+![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v2022.2.3](https://img.shields.io/badge/AppVersion-v2022.2.3-informational?style=flat-square)
+
+A Helm chart for deploying PlanarAlly (https://github.com/Kruptein/PlanarAlly) on a Kubernetes cluster
+
+**Homepage:** <https://github.com/donicrosby/PlanarAlly-k8s>
+
+## Source Code
+
+* <https://github.com/donicrosby/PlanarAlly-k8s>
+
+## Values
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| affinity | object | `{}` | Any affinity settings for the deployment in scheduling the pod |
+| config.admin.enabled | bool | `true` | Enable the admin console |
+| config.maxUploadBytes | string | `"10_485_760"` | This limits the maximum size a single request to the server can be. This does _not_ limit the maximum size of assets. Campaign uploads will be chunked by the client according to this setting. Assets are currently sent in a chunked fashion over a websocket, so this is not relevant for them yet. Defaults to 10 * 1024 ** 2 = 10 MB |
+| fullnameOverride | string | `""` | Override the kubernetes object release name values |
+| image.pullPolicy | string | `"IfNotPresent"` | Pull policy for the deployment |
+| image.repository | string | `"kruptein/planarally"` | Image to use for deploying, must support the same  /static/assests and /data volumes as the default image |
+| image.tag | string | the chart will use the app version in the Chart.yaml | Overrides the image tag whose default is the chart appVersion. |
+| imagePullSecrets | list | `[]` | Any credentials needed for pulling the planarally container |
+| ingress.annotations | object | `{}` | Any annotations needed for the Ingress Controller |
+| ingress.className | string | `""` | Set ingress class name |
+| ingress.enabled | bool | `false` | Enable ingress for the service |
+| ingress.hosts | list | `[{"host":"planarally.chart.local","paths":[{"path":"/","pathType":"ImplementationSpecific"}]}]` | Hostnames and paths that should route to the Planar Ally service |
+| ingress.tls | list | `[]` | TLS certificates that should be used for the service |
+| initContainer.pullPolicy | string | `"IfNotPresent"` | Pull policy for the init container |
+| initContainer.repository | string | `"busybox"` | Image to use for fixing permissions of the storage directory |
+| initContainer.tag | string | `"1.35"` | Set the tag for the init conatiner |
+| nameOverride | string | `""` | Override the name of the deployment for the chart |
+| nodeSelector | object | `{}` | Node selector for the deployement |
+| podAnnotations | object | `{}` | Any pod annotations needed |
+| podSecurityContext | object | `{}` | Any pod security context needed |
+| replicaCount | int | `1` | Should be only one replica for the deployment as  Planar Ally uses sqlite as it's database backend |
+| resources | object | `{}` | Resource allocations for the deployment |
+| securityContext | object | `{}` | Any deployment security context needed |
+| service.loadBalancerIP | IP | `"nil"` | If service.type is LoadBalancer hardcode the IP that is to be required |
+| service.nodePort | int | `"nil"` | If service.type is NodePort set the value of the node |
+| service.port | int | `8000` | Should be set to the default port planar ally runs in the container |
+| service.type | string | `"ClusterIP"` | What service should be used for accessing the pod |
+| serviceAccount.annotations | object | `{}` | Annotations to add to the service account |
+| serviceAccount.create | bool | `true` | Specifies whether a service account should be created |
+| serviceAccount.name | string | `""` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template |
+| storage.data | object | `{"accessMode":"ReadWriteOnce","annotations":{},"size":"32Gi"}` | This should be storage that has block level support such as Longhorn, Celph, Gluster, etc. using NFS for this will end in pain, misery, and lost hair |
+| storage.data.accessMode | string | `"ReadWriteOnce"` | Access mode for the data storage |
+| storage.data.annotations | object | `{}` | Annotations needed for the data storage PVC |
+| storage.data.size | string | `"32Gi"` | Allocated storage for the data storage |
+| storage.static | object | `{"accessMode":"ReadWriteOnce","annotations":{},"size":"64Gi"}` | Any expandable storage class should be good for this if you have a NAS with NFS use it for this |
+| storage.static.accessMode | string | `"ReadWriteOnce"` | Access mode for the data storage |
+| storage.static.annotations | object | `{}` | Annotations needed for the data storage PVC |
+| storage.static.size | string | `"64Gi"` | Allocated storage for the data storage |
+| tolerations | list | `[]` | Any tolerations for the deployment |
+
+----------------------------------------------
+Autogenerated from chart metadata using [helm-docs v1.11.0](https://github.com/norwoodj/helm-docs/releases/v1.11.0)

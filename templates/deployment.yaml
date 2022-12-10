@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "planarally.fullname" . }}
+  labels:
+    {{- include "planarally.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "planarally.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "planarally.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "planarally.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: chown-data-dir
+          image: "{{ .Values.initContainer.repository }}:{{ .Values.initContainer.tag }}"
+          imagePullPolicy: {{ .Values.initContainer.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /planarally/data/
+          command: ['sh', '-c', "find /planarally/data | xargs  chown -R 9000:9000"]
+        - name: chown-static-dir
+          image: "{{ .Values.initContainer.repository }}:{{ .Values.initContainer.tag }}"
+          imagePullPolicy: {{ .Values.initContainer.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          command: ['sh', '-c', "find /planarally/static/assets | xargs  chown -R 9000:9000"]
+          volumeMounts:
+            - name: static-assets
+              mountPath: /planarally/static/assets/
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /planarally/data/
+            - name: static-assets
+              mountPath: /planarally/static/assets/
+            - name: server-config
+              mountPath: /planarally/server_config.cfg
+              subPath: server_config.cfg
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ if .Values.storage.data.existingClaim }}{{ .Values.storage.data.existingClaim }}{{- else }}{{ template "planarally.fullname" . }}-data{{- end }}
+        - name: static-assets
+          persistentVolumeClaim:
+            claimName: {{ if .Values.storage.static.existingClaim }}{{ .Values.storage.static.existingClaim }}{{- else }}{{ template "planarally.fullname" . }}-static{{- end }}
+        - name: server-config
+          configMap:
+            # Provide the name of the ConfigMap containing the files you want
+            # to add to the container
+            name: {{ include "planarally.fullname" . }}-server-config
+            items:
+            {{- range $path, $d := .Files.Glob "config/*.tpl" }}
+            {{- $trimmedPath := $path | base | trimSuffix ".tpl" }}
+              - key: {{ $trimmedPath }}
+                path:  {{ $trimmedPath }}
+            {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

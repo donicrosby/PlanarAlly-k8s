@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "planarally.fullname" . }}-server-config
+  labels:
+    {{- include "planarally.labels" . | nindent 4 }}
+data:
+    {{- $values := . -}}
+    {{- range $path, $d := .Files.Glob "config/*.tpl" }}
+    {{ $path | base | trimSuffix ".tpl"}}: |-
+    {{- tpl ($d | toString) $values | nindent 6 }}
+    {{ end }}
